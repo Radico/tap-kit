@@ -44,8 +44,8 @@ def write_records(stream_name, records):
 def get_latest_for_next_call(records, replication_key, last_updated):
     # TODO add pendulum parsing here that is flexible by data types
     return max([
-        r[replication_key] for r in records
-    ] + [last_updated])
+        safe_to_iso8601(r[replication_key]) for r in records
+    ] + [safe_to_iso8601(last_updated)])
 
 
 def format_last_updated_for_request(last_updated, key_format):
@@ -91,3 +91,6 @@ def safe_to_iso8601(date_to_parse):
         pend_date = pendulum.from_timestamp(date_to_parse)
 
     return pend_date.to_iso8601_string()
+
+def timestamp_to_iso8601(ts):
+    return pendulum.from_timestamp(int(ts)).to_iso8601_string()

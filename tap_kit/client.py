@@ -17,30 +17,14 @@ class BaseClient:
     def __init__(self, config):
         self.config = config
 
-    def get_authorization(self):
-        if self.auth_type == 'basic':
-            return requests.auth.HTTPBasicAuth(
-                self.config.get('user_name'),
-                self.config.get('password')
-            )
-        elif self.auth_type == 'basic_key':
-            return requests.auth.HTTPBasicAuth(
-                self.config.get('api_key'), '')
-        else:
-            return None
-
-    def requests_method(self, method, request_config, body):
-        request_config.update(
-            {
-                'headers': {'Content-Type': 'application/json'}
-            }
-        )
+    @staticmethod
+    def requests_method(method, request_config, body):
+        request_config['headers']['Content-Type'] = 'application/json'
 
         return requests.request(
             method,
             request_config['url'],
             headers=request_config['headers'],
-            auth=self.get_authorization(),
             params=request_config['params'],
             json=body)
 

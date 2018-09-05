@@ -3,6 +3,7 @@ import sys
 import json
 
 import singer
+import base64
 
 from singer.catalog import Catalog, CatalogEntry, Schema
 
@@ -20,6 +21,7 @@ class TapExecutor:
     pagination_type = None
     replication_key_format = 'iso8601'
     res_json_key = None
+    auth_type = None
 
     """
     url = None
@@ -49,6 +51,12 @@ class TapExecutor:
         else:
             self.sync()
 
+    def get_res_json_key(self, stream):
+        if self.res_json_key == 'STREAM':
+            return stream.stream
+        else:
+            return self.res_json_key
+
     def set_catalog(self):
         self.catalog = Catalog.from_dict(self.args.properties) \
             if self.args.properties else self.discover()
@@ -75,6 +83,27 @@ class TapExecutor:
     def generate_api_url(self, stream):
         return self.url + stream.stream
 
+    def generate_auth(self):
+        if self.auth_type == 'basic':
+            return base64.b64encode(
+                '{username}:{password}'.format(
+                    username=self.config.get('username'),
+                    password=self.config.get('password')
+                ).encode('ascii')).decode("utf-8")
+        elif self.auth_type == 'basic_key':
+            return base64.b64encode(
+                '{api_key}:{password}'.format(
+                    api_key=self.config.get('api_key'),
+                    password=''
+                ).encode('ascii')).decode("utf-8")
+        else:
+            return None
+
+    def build_headers(self):
+        return {
+            "Authorization": "Basic %s" % self.generate_auth()
+        }
+
     def call_incremental_stream(self, stream):
         """
         Method to call all incremental synced streams
@@ -83,11 +112,9 @@ class TapExecutor:
         last_updated = format_last_updated_for_request(
             stream.update_and_return_bookmark(), self.replication_key_format)
 
-        url_for_request = self.generate_api_url(stream)
-
         request_config = {
-            'url': url_for_request,
-            'headers': {},
+            'url': self.generate_api_url(stream),
+            'headers': self.build_headers(),
             'params': {stream.stream_metadata[stream.filter_key]: last_updated},
             'run': True
         }
@@ -98,7 +125,7 @@ class TapExecutor:
 
             res = self.client.make_request(request_config)
 
-            records = get_res_data(res.json(), self.res_json_key)
+            records = get_res_data(res.json(), self.get_res_json_key(stream))
 
             transform_write_and_count(stream, records)
 
@@ -122,8 +149,8 @@ class TapExecutor:
                 request_config['run'] = False
                 return request_config
         elif self.pagination_type == 'precise':
-            if res['count'] == 1000:
-                request_config['params']['start_time'] = res['end_time']
+            if res.json()['count'] == 1000:
+                request_config['params']['start_time'] = res.json()['end_time']
             else:
                 request_config['run'] = False
                 return request_config
