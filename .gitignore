@@ -1,0 +1,8 @@
+*_config.json
+*_catalog.json
+*_state.json
+
+
+.idea*
+*.egg-info/*
+*.pyc
