@@ -9,7 +9,7 @@ from singer.catalog import Catalog, CatalogEntry, Schema
 
 from .streams import Stream
 from .utils import (
-    stream_is_selected, transform_write_and_count, get_latest_for_next_call,
+    stream_is_selected, transform_write_and_count, safe_to_iso8601,
     format_last_updated_for_request, get_res_data
 )
 
@@ -104,6 +104,19 @@ class TapExecutor:
             "Authorization": "Basic %s" % self.generate_auth()
         }
 
+    def build_params(self, stream, last_updated):
+        return {
+            stream.stream_metadata[stream.filter_key]: last_updated
+        }
+
+    def get_latest_for_next_call(self, records, replication_key, last_updated):
+        return max([safe_to_iso8601(r[replication_key]) for r in records
+                   ] + [safe_to_iso8601(last_updated)])
+
+    def should_write(self, records, stream, last_updated):
+        return True
+
+
     def call_incremental_stream(self, stream):
         """
         Method to call all incremental synced streams
@@ -115,9 +128,11 @@ class TapExecutor:
         request_config = {
             'url': self.generate_api_url(stream),
             'headers': self.build_headers(),
-            'params': {stream.stream_metadata[stream.filter_key]: last_updated},
+            'params': self.build_params(stream, last_updated),
             'run': True
         }
+
+        print(request_config)
 
         LOGGER.info("Extracting %s since %s" % (stream, last_updated))
 
@@ -127,9 +142,10 @@ class TapExecutor:
 
             records = get_res_data(res.json(), self.get_res_json_key(stream))
 
-            transform_write_and_count(stream, records)
+            if self.should_write(records, stream, last_updated):
+                transform_write_and_count(stream, records)
 
-            last_updated = get_latest_for_next_call(
+            last_updated = self.get_latest_for_next_call(
                 records,
                 stream.stream_metadata['replication-key'],
                 last_updated

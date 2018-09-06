@@ -19,7 +19,8 @@ class BaseClient:
 
     @staticmethod
     def requests_method(method, request_config, body):
-        request_config['headers']['Content-Type'] = 'application/json'
+        if 'Content-Type' not in request_config['headers']:
+            request_config['headers']['Content-Type'] = 'application/json'
 
         return requests.request(
             method,

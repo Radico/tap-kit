@@ -41,18 +41,13 @@ def write_records(stream_name, records):
     metrics(stream_name, records)
 
 
-def get_latest_for_next_call(records, replication_key, last_updated):
-    # TODO add pendulum parsing here that is flexible by data types
-    return max([
-        safe_to_iso8601(r[replication_key]) for r in records
-    ] + [safe_to_iso8601(last_updated)])
-
-
 def format_last_updated_for_request(last_updated, key_format):
     if key_format == 'iso8601':
         return pendulum.parse(last_updated).to_iso8601_string()
     elif key_format == 'timestamp':
         return pendulum.parse(last_updated).int_timestamp
+    elif key_format == 'datestring':
+        return pendulum.parse(last_updated).to_date_string()
     else:
         return last_updated
 
@@ -94,3 +89,6 @@ def safe_to_iso8601(date_to_parse):
 
 def timestamp_to_iso8601(ts):
     return pendulum.from_timestamp(int(ts)).to_iso8601_string()
+
+def date_to_date_str(date):
+    return pendulum.parse(date).to_date_string()
