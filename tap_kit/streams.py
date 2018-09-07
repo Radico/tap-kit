@@ -13,6 +13,7 @@ _META_FIELDS = {
     'replication-key': 'replication_key',
     'selected-by-default': 'selected_by_default',
     'incremental-search-key': 'incremental_search_key',
+    'api-path': 'api_path',
 }
 
 

@@ -66,22 +66,33 @@ class TapExecutor:
 
     def call_full_stream(self, stream):
         """
-        Method to call all full replication synced streams
+        Method to call all fully synced streams
         """
 
-        LOGGER.info("Extracting %s" % stream)
-        url = self.url + stream.stream
+        request_config = {
+            'url': self.generate_api_url(stream),
+            'headers': self.build_headers(),
+            'params': self.build_params(stream),
+            'run': True
+        }
 
-        while True:
+        LOGGER.info("Extracting %s " % stream)
 
-            res = self.client.make_request(url, stream.api_path)
+        while request_config['run']:
 
-            transform_write_and_count(stream, res.json())
+            res = self.client.make_request(request_config)
 
-            break
+            records = get_res_data(res.json(), self.get_res_json_key(stream))
+
+            transform_write_and_count(stream, records)
+
+            request_config = self.update_for_next_call(res, request_config)
 
     def generate_api_url(self, stream):
-        return self.url + stream.stream
+        print(stream.stream_metadata)
+        return self.url + (stream.stream_metadata['api-path']
+                           if 'api-path' in stream.stream_metadata
+                           else stream.stream)
 
     def generate_auth(self):
         if self.auth_type == 'basic':
@@ -104,10 +115,13 @@ class TapExecutor:
             "Authorization": "Basic %s" % self.generate_auth()
         }
 
-    def build_params(self, stream, last_updated):
-        return {
-            stream.stream_metadata[stream.filter_key]: last_updated
-        }
+    def build_params(self, stream, last_updated=None):
+        if last_updated:
+            return {
+                stream.stream_metadata[stream.filter_key]: last_updated
+            }
+        else:
+            return {}
 
     def get_latest_for_next_call(self, records, replication_key, last_updated):
         return max([safe_to_iso8601(r[replication_key]) for r in records
@@ -128,11 +142,9 @@ class TapExecutor:
         request_config = {
             'url': self.generate_api_url(stream),
             'headers': self.build_headers(),
-            'params': self.build_params(stream, last_updated),
+            'params': self.build_params(stream, last_updated=last_updated),
             'run': True
         }
-
-        print(request_config)
 
         LOGGER.info("Extracting %s since %s" % (stream, last_updated))
 
@@ -151,12 +163,15 @@ class TapExecutor:
                 last_updated
             )
 
-            request_config = self.update_for_next_call(res, request_config,
-                                                       last_updated)
+            request_config = self.update_for_next_call(
+                res,
+                request_config,
+                last_updated=last_updated
+            )
 
         return last_updated
 
-    def update_for_next_call(self, res, request_config, last_updated):
+    def update_for_next_call(self, res, request_config, last_updated=None):
         if self.pagination_type == 'next':
             if 'next' in res.links:
                 request_config['url'] = res.links['next']['url']
