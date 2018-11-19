@@ -153,7 +153,3 @@ class Stream:
             self.catalog.schema.to_dict(),
             key_properties=self.stream_metadata.get('table-key-properties', []))
 
-    @property
-    def stream_metadata(self):
-        return singer.metadata.to_map(self.catalog.metadata).get(())
-
