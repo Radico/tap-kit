@@ -58,8 +58,8 @@ class TapExecutor:
             return self.res_json_key
 
     @staticmethod
-    def get_res_data(data, key):
-        return get_res_data(data, key)
+    def get_res_data(res, key):
+        return get_res_data(res.json(), key)
 
     def set_catalog(self):
         self.catalog = Catalog.from_dict(self.args.properties) \
@@ -155,7 +155,7 @@ class TapExecutor:
 
             res = self.client.make_request(request_config)
 
-            records = self.get_res_data(res.json(), self.get_res_json_key(stream))
+            records = self.get_res_data(res, self.get_res_json_key(stream))
 
             if self.should_write(records, stream, last_updated):
                 transform_write_and_count(stream, records)
