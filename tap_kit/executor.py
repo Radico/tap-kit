@@ -57,6 +57,10 @@ class TapExecutor:
         else:
             return self.res_json_key
 
+    @staticmethod
+    def get_res_data(res, key):
+        return get_res_data(res.json(), key)
+
     def set_catalog(self):
         self.catalog = Catalog.from_dict(self.args.properties) \
             if self.args.properties else self.discover()
@@ -82,7 +86,7 @@ class TapExecutor:
 
             res = self.client.make_request(request_config)
 
-            records = get_res_data(res.json(), self.get_res_json_key(stream))
+            records = self.get_res_data(res.json(), self.get_res_json_key(stream))
 
             transform_write_and_count(stream, records)
 
@@ -151,7 +155,7 @@ class TapExecutor:
 
             res = self.client.make_request(request_config)
 
-            records = get_res_data(res.json(), self.get_res_json_key(stream))
+            records = self.get_res_data(res, self.get_res_json_key(stream))
 
             if self.should_write(records, stream, last_updated):
                 transform_write_and_count(stream, records)
@@ -165,12 +169,13 @@ class TapExecutor:
             request_config = self.update_for_next_call(
                 res,
                 request_config,
-                last_updated=last_updated
+                last_updated=last_updated,
+                stream=stream
             )
 
         return last_updated
 
-    def update_for_next_call(self, res, request_config, last_updated=None):
+    def update_for_next_call(self, res, request_config, last_updated=None, stream=None):
         if self.pagination_type == 'next':
             if 'next' in res.links:
                 request_config['url'] = res.links['next']['url']
