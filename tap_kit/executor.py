@@ -133,6 +133,8 @@ class TapExecutor:
     def should_write(self, records, stream, last_updated):
         return True
 
+    def should_update_state(self, records, stream):
+        return False
 
     def call_incremental_stream(self, stream):
         """
@@ -165,6 +167,9 @@ class TapExecutor:
                 stream.stream_metadata['replication-key'],
                 last_updated
             )
+
+            if self.should_update_state(records, stream):
+                stream.update_bookmark(last_updated)
 
             request_config = self.update_for_next_call(
                 res,
