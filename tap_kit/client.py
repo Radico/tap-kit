@@ -34,7 +34,6 @@ class BaseClient:
                           max_tries=10,
                           factor=2)
     def make_request(self, request_config, body=None, method='GET'):
-
         LOGGER.info("Making {} request to {}".format(
             method, request_config['url']))
 
