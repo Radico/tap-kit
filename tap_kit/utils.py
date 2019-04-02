@@ -48,6 +48,8 @@ def format_last_updated_for_request(last_updated, key_format):
         return pendulum.parse(last_updated).int_timestamp
     elif key_format == 'datestring':
         return pendulum.parse(last_updated).to_date_string()
+    elif key_format == 'datetime_string':
+        return pendulum.parse(last_updated).to_datetime_string()
     else:
         return last_updated
 
@@ -57,6 +59,7 @@ def get_res_data(data, key):
         return data[key]
     else:
         return data
+
 
 # Stream metadata management
 def get_base_stream_metadata(stream_catalog):
@@ -78,6 +81,7 @@ def stream_is_selected(stream_catalog):
 
     return inclusion == 'automatic'
 
+
 # date / time parsing
 def safe_to_iso8601(date_to_parse):
     try:
@@ -87,8 +91,32 @@ def safe_to_iso8601(date_to_parse):
 
     return pend_date.to_iso8601_string()
 
+
 def timestamp_to_iso8601(ts):
+    """
+    Args:
+        ts (int): epoch-formatted integer
+    Returns:
+        ISO 8601-formatted date string
+    """
     return pendulum.from_timestamp(int(ts)).to_iso8601_string()
 
+
 def date_to_date_str(date):
+    """
+    Args:
+        date (str): date string
+    Returns:
+        date string in the following format: 'YYYY-MM-DD'
+    """
     return pendulum.parse(date).to_date_string()
+
+
+def date_to_datetime_str(date):
+    """
+    Args:
+        date (str): date string
+    Returns:
+        date string in the following format: 'YYYY-MM-DD hh:mm:ss'
+    """
+    return pendulum.parse(date).to_datetime_string()
