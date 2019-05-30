@@ -221,4 +221,4 @@ class TapExecutor:
             stream().generate_catalog() for stream in self.streams
         ]
 
-        return json.dump({'streams': catalog}, sys.stdout, indent=4)
+        return json.dump({"streams": catalog}, sys.stdout)
