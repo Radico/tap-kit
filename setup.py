@@ -12,7 +12,7 @@ setup(
     install_requires=[
         "singer-python==5.2.0",
         'requests==2.18.4',
-        "pendulum==2.0.4",
+        "pendulum==1.2.0",
     ],
     packages=["tap_kit"],
     include_package_data=True,
