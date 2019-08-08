@@ -199,11 +199,12 @@ class TapExecutor:
         stream.write_schema()
 
         if stream.is_incremental:
+            LOGGER.info('Stream {} marked for incremental extraction'.format(stream))
             stream.set_stream_state(self.state)
             last_updated = self.call_incremental_stream(stream)
             stream.update_bookmark(last_updated)
-
         else:
+            LOGGER.info('Stream {} marked for full extraction'.format(stream))
             self.call_full_stream(stream)
 
     def sync(self):

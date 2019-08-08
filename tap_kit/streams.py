@@ -49,11 +49,7 @@ class Stream:
 
     @property
     def is_incremental(self):
-        if self.stream_metadata.get('forced-replication-method'
-                                    ) == 'incremental':
-            return True
-        else:
-            return False
+        return self.stream_metadata.get('forced-replication-method') == 'incremental'
 
     @property
     def filter_key(self):
