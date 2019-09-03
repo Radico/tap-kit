@@ -21,7 +21,11 @@ class BaseClient:
     def requests_method(method, request_config, body):
         if 'Content-Type' not in request_config['headers']:
             request_config['headers']['Content-Type'] = 'application/json'
-
+        
+        LOGGER.info("Method: {}".format(method))
+        LOGGER.info("Config: {}".format(request_config))
+        LOGGER.info("Body: {}".format(body))
+        
         return requests.request(
             method,
             request_config['url'],
