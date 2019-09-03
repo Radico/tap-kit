@@ -114,8 +114,11 @@ class TapExecutor:
             return None
 
     def build_headers(self):
+        auth = self.generate_auth()
+        if not auth:
+            return {}
         return {
-            "Authorization": "Basic %s" % self.generate_auth()
+            "Authorization": "Basic %s" % auth
         }
 
     def build_params(self, stream, last_updated=None):
