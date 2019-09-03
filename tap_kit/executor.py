@@ -93,6 +93,7 @@ class TapExecutor:
             request_config = self.update_for_next_call(res, request_config)
 
     def generate_api_url(self, stream):
+        LOGGER.info(stream)
         return self.url + (stream.stream_metadata['api-path']
                            if 'api-path' in stream.stream_metadata
                            else stream.stream)
