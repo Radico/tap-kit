@@ -12,6 +12,7 @@ _META_FIELDS = {
     'selected-by-default': 'selected_by_default',
     'incremental-search-key': 'incremental_search_key',
     'api-path': 'api_path',
+    'selected': 'selected'
 }
 
 
