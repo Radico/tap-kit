@@ -1,13 +1,11 @@
 import singer
 
-
-from .utils import (
-    safe_to_iso8601,
-)
+from .utils import safe_to_iso8601
 
 
 _META_FIELDS = {
     'table-key-properties': 'key_properties',
+    'replication-method': 'replication_method',
     'forced-replication-method': 'replication_method',
     'valid-replication-keys': 'valid_replication_keys',
     'replication-key': 'replication_key',
@@ -48,40 +46,7 @@ class Stream:
             self.schema = self.catalog.schema
             self.meta_fields['replication_key'] = self.stream_metadata.get('replication-key')
 
-    @property
-    def is_incremental(self):
-        return self.stream_metadata.get('forced-replication-method') == 'incremental'
-
-    @property
-    def filter_key(self):
-        return 'incremental-search-key' \
-            if 'incremental-search-key' in self.stream_metadata \
-            else 'replication-key'
-
-    def set_stream_state(self, state):
-        self.state = state
-
-    def get_bookmark(self):
-        return singer.get_bookmark(self.state, self.stream,
-                                   self.stream_metadata.get('replication-key'))
-
-    def update_bookmark(self, last_updated):
-        singer.bookmarks.write_bookmark(self.state,
-                                        self.stream,
-                                        self.stream_metadata.get(
-                                            'replication-key'),
-                                        safe_to_iso8601(last_updated))
-        singer.write_state(self.state)
-
-    def update_start_date_bookmark(self):
-        val = self.get_bookmark()
-        if not val:
-            val = self.config['start_date']
-            self.update_bookmark(val)
-
-    def update_and_return_bookmark(self):
-        self.update_start_date_bookmark()
-        return self.get_bookmark()
+    # ------------------------- DISCOVER MODE ------------------------- #
 
     def build_base_metadata(self, metadata):
         for field in _META_FIELDS:
@@ -95,18 +60,12 @@ class Stream:
 
     @staticmethod
     def write_base_metadata(metadata, k, v):
-        singer.metadata.write(
-            metadata,
-            (),
-            k,
-            v
-        )
+        singer.metadata.write(metadata, (), k, v)
 
     @property
     def stream_metadata(self):
         if self.catalog:
-            return singer.metadata.to_map(
-                self.catalog.metadata).get((), {})
+            return singer.metadata.to_map(self.catalog.metadata).get((), {})
 
     def generate_catalog(self):
         schema = self.schema
@@ -132,6 +91,27 @@ class Stream:
             'metadata': singer.metadata.to_list(mdata)
         }
 
+    def get_catalog_keys(self):
+        return list(self.catalog.schema.properties.keys())
+
+    # ------------------------- SYNC MODE ------------------------- #
+
+    @property
+    def is_incremental(self):
+        return self.stream_metadata.get('replication-method').lower() == 'incremental'
+
+    @property
+    def filter_key(self):
+        return 'incremental-search-key' \
+            if 'incremental-search-key' in self.stream_metadata \
+            else 'replication-key'
+
+    def write_schema(self):
+        singer.write_schema(
+            self.catalog.stream,
+            self.catalog.schema.to_dict(),
+            key_properties=self.stream_metadata.get('table-key-properties', []))
+
     def transform_record(self, record):
         with singer.Transformer() as tx:
             metadata = self.stream_metadata if self.catalog.metadata else {}
@@ -141,12 +121,30 @@ class Stream:
                 self.catalog.schema.to_dict(),
                 metadata)
 
-    def get_catalog_keys(self):
-        return list(self.catalog.schema.properties.keys())
+    # ------------------------- UPDATING STREAM STATE ------------------------- #
 
-    def write_schema(self):
-        singer.write_schema(
-            self.catalog.stream,
-            self.catalog.schema.to_dict(),
-            key_properties=self.stream_metadata.get('table-key-properties', []))
+    def set_stream_state(self, state):
+        self.state = state
 
+    def get_bookmark(self):
+        return singer.get_bookmark(self.state,
+                                   self.stream,
+                                   self.stream_metadata.get('replication-key'))
+
+    def update_bookmark(self, last_updated):
+        singer.bookmarks.write_bookmark(self.state,
+                                        self.stream,
+                                        self.stream_metadata.get('replication-key'),
+                                        safe_to_iso8601(last_updated))
+        singer.write_state(self.state)
+
+    def update_start_date_bookmark(self):
+        val = self.get_bookmark()
+
+        if not val:
+            val = self.config['start_date']
+            self.update_bookmark(val)
+
+    def update_and_return_bookmark(self):
+        self.update_start_date_bookmark()
+        return self.get_bookmark()
