@@ -10,7 +10,7 @@ This package could help if an API meets the following criteria:
 - Catalog is generatable from schema files (i.e. doesn't need to query the integration API to determine data availability/ids/etc.)
 - Straightforward pagination approach (e.g. next https://tools.ietf.org/html/rfc5988 OR simple param search)
 
-##Setup
+## Setup
 
 Add the following to your `setup.py`:
 
