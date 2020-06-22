@@ -1,3 +1,5 @@
+from builtins import Exception
+
 import singer
 import requests
 import backoff
@@ -31,6 +33,7 @@ class BaseClient:
 
     @backoff.on_exception(backoff.expo,
                           RateLimitException,
+                          Exception,
                           max_tries=10,
                           factor=2)
     def make_request(self, request_config, body=None, method='GET'):
@@ -38,10 +41,17 @@ class BaseClient:
             method, request_config['url']))
 
         with singer.metrics.Timer('request_duration', {}) as timer:
-            response = self.requests_method(method, request_config, body)
+            try:
+                response = self.requests_method(method, request_config, body)
+            except Exception:
+                raise Exception()
+
 
         if response.status_code in [429, 503]:
             raise RateLimitException()
+
+        if response.status_code in [400, 502, 504]:
+            raise Exception()
 
         response.raise_for_status()
 
