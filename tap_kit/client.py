@@ -9,11 +9,6 @@ from requests.exceptions import (
 
 LOGGER = singer.get_logger()
 
-CONN_RETRY_ERRORS = (
-    ConnectionError,
-    SSLError,
-)
-
 RATE_LIMIT_ERROR_CODES =[
     429,
     503
@@ -51,7 +46,7 @@ class BaseClient:
             json=body)
 
     @backoff.on_exception(backoff.expo,
-                          CONN_RETRY_ERRORS + RetryableException,
+                          (ConnectionError, SSLError, RetryableException),
                           max_tries=10,
                           factor=2)
     def make_request(self, request_config, body=None, method='GET'):
