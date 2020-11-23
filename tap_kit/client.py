@@ -25,6 +25,10 @@ class RetryableException(Exception):
     pass
 
 
+class RateLimitException(Exception):
+    pass
+
+
 class BaseClient:
     RATE_LIMIT_PAUSE = 30
     url = None
