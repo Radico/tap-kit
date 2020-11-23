@@ -2,10 +2,26 @@ import singer
 import requests
 import backoff
 
+from requests.exceptions import (
+    ConnectionError,
+    SSLError,
+)
+
 LOGGER = singer.get_logger()
 
+RATE_LIMIT_ERROR_CODES =[
+    429,
+    503
+]
 
-class RateLimitException(Exception):
+BAD_REQUEST_CODES =[
+    400,
+    502,
+    504
+]
+
+
+class RetryableException(Exception):
     pass
 
 
@@ -30,7 +46,7 @@ class BaseClient:
             json=body)
 
     @backoff.on_exception(backoff.expo,
-                          RateLimitException,
+                          (ConnectionError, SSLError, RetryableException),
                           max_tries=10,
                           factor=2)
     def make_request(self, request_config, body=None, method='GET'):
@@ -40,8 +56,9 @@ class BaseClient:
         with singer.metrics.Timer('request_duration', {}) as timer:
             response = self.requests_method(method, request_config, body)
 
-        if response.status_code in [429, 503]:
-            raise RateLimitException()
+
+        if response.status_code in RATE_LIMIT_ERROR_CODES + BAD_REQUEST_CODES:
+            raise RetryableException()
 
         response.raise_for_status()
 
