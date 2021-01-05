@@ -62,8 +62,7 @@ class BaseClient:
 
 
         if response.status_code in RATE_LIMIT_ERROR_CODES + BAD_REQUEST_CODES:
-            # response.raise_for_status() testing response error
-            raise RetryableException()
+            raise RetryableException(response)
 
         response.raise_for_status()
 
