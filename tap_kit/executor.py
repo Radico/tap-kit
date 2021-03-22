@@ -6,6 +6,7 @@ import singer
 import base64
 
 from singer.catalog import Catalog
+from urllib.parse import urlparse, parse_qs
 
 from .streams import Stream
 from .utils import (stream_is_selected, transform_write_and_count, safe_to_iso8601,
@@ -206,10 +207,21 @@ class TapExecutor:
     def should_update_state(self, records, stream):
         return False
 
+    def sanitize_url(self, url):
+        parsed_url = urlparse(url)
+        parsed_query_string = parse_qs(parsed_url.query)
+
+        for q in parsed_query_string:
+            v = parsed_query_string[q]
+            if len(v) > 1:
+                parsed_query_string[q] = v[0]
+
+        return "{}://{}{}".format(parsed_url.scheme, parsed_url.netloc, parsed_url.path), parsed_query_string
+
     def update_for_next_call(self, res, request_config, last_updated=None, stream=None):
         if self.pagination_type == 'next':
             if 'next' in res.links:
-                request_config['url'] = res.links['next']['url']
+                request_config['url'], request_config['params'] = self.sanitize_url(res.links['next']['url'])
                 return request_config
             else:
                 request_config['run'] = False
