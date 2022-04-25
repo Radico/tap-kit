@@ -116,6 +116,10 @@ class Stream:
         with singer.Transformer() as tx:
             metadata = self.stream_metadata if self.catalog.metadata else {}
 
+            for key in metadata.keys():
+                if b'\x00' in metadata[key]:
+                    metadata.update({metadata[key]: metadata[key].replace(b'\x00', '')})
+
             return tx.transform(
                 record,
                 self.catalog.schema.to_dict(),
