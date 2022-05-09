@@ -153,10 +153,7 @@ class Stream:
         self.update_start_date_bookmark()
         return self.get_bookmark()
 
-def validate_ingestible_data(record):
-    from pycore.text import to_unicode
-    import re
-    
+def validate_ingestible_data(record):    
     for key, value in record.items():
         if isinstance(value, dict):
             validate_ingestible_data(value)
