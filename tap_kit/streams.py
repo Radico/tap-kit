@@ -2,6 +2,8 @@ import singer
 
 from .utils import safe_to_iso8601
 
+from pycore.text import to_unicode   
+
 
 _META_FIELDS = {
     'table-key-properties': 'key_properties',
@@ -116,9 +118,7 @@ class Stream:
         with singer.Transformer() as tx:
             metadata = self.stream_metadata if self.catalog.metadata else {}
 
-            for key in metadata.keys():
-                if b'\x00' in metadata[key]:
-                    metadata.update({metadata[key]: metadata[key].replace(b'\x00', '')})
+            record = validate_ingestible_data(record)
 
             return tx.transform(
                 record,
@@ -152,3 +152,21 @@ class Stream:
     def update_and_return_bookmark(self):
         self.update_start_date_bookmark()
         return self.get_bookmark()
+
+def validate_ingestible_data(record):
+    from pycore.text import to_unicode
+    import re
+    
+    for key, value in record.items():
+        if isinstance(value, dict):
+            validate_ingestible_data(value)
+        else:
+            try:
+                record[key] = to_unicode(value)
+            except UnicodeDecodeError as e:
+                record[key] = ''
+                pass
+            if len(str(value)) != len(str(value).encode()):
+                record[key] = value.encode("ascii", "ignore").replace(b'\x00', b'').decode()
+    
+    return record
