@@ -2,7 +2,7 @@ import singer
 
 from .utils import safe_to_iso8601
 
-from pycore.text import to_unicode   
+from pycore.text import is_unicode   
 
 _META_FIELDS = {
     'table-key-properties': 'key_properties',
@@ -157,11 +157,6 @@ def validate_ingestible_data(record):
         if isinstance(value, dict):
             validate_ingestible_data(value)
         else:
-            try:
-                record[key] = to_unicode(value)
-            except UnicodeDecodeError as e:
-                record[key] = ''
-                pass
-            if len(str(value)) != len(str(value).encode()):
+            if is_unicode(value):
                 record[key] = value.replace('\u0000', '') 
     return record
