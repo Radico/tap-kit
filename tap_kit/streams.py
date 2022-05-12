@@ -4,7 +4,6 @@ from .utils import safe_to_iso8601
 
 from pycore.text import to_unicode   
 
-
 _META_FIELDS = {
     'table-key-properties': 'key_properties',
     'replication-method': 'replication_method',
@@ -164,6 +163,5 @@ def validate_ingestible_data(record):
                 record[key] = ''
                 pass
             if len(str(value)) != len(str(value).encode()):
-                record[key] = value.encode("ascii", "ignore").replace(b'\x00', b'').decode()
-    
+                record[key] = value.replace('\u0000', '') 
     return record
