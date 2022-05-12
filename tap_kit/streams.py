@@ -159,4 +159,3 @@ def validate_ingestible_data(record):
         else:
             if is_unicode(value):
                 record[key] = value.replace('\u0000', '') 
-    return record
