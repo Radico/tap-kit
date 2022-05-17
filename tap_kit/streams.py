@@ -2,7 +2,6 @@ import singer
 
 from .utils import safe_to_iso8601
 
-from pycore.text import is_unicode   
 
 _META_FIELDS = {
     'table-key-properties': 'key_properties',
@@ -117,8 +116,6 @@ class Stream:
         with singer.Transformer() as tx:
             metadata = self.stream_metadata if self.catalog.metadata else {}
 
-            record = validate_ingestible_data(record)
-
             return tx.transform(
                 record,
                 self.catalog.schema.to_dict(),
@@ -151,11 +148,3 @@ class Stream:
     def update_and_return_bookmark(self):
         self.update_start_date_bookmark()
         return self.get_bookmark()
-
-def validate_ingestible_data(record):    
-    for key, value in record.items():
-        if isinstance(value, dict):
-            validate_ingestible_data(value)
-        else:
-            if is_unicode(value):
-                record[key] = value.replace('\u0000', '') 
