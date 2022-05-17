@@ -2,6 +2,8 @@ import singer
 
 from .utils import safe_to_iso8601
 
+from pycore.text import is_unicode   
+
 _META_FIELDS = {
     'table-key-properties': 'key_properties',
     'replication-method': 'replication_method',
@@ -155,5 +157,5 @@ def validate_ingestible_data(record):
         if isinstance(value, dict):
             validate_ingestible_data(value)
         else:
-            if isinstance(value, str):
+            if is_unicode(value):
                 record[key] = value.replace('\u0000', '') 
