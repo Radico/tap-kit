@@ -12,6 +12,15 @@ This package could help if an API meets the following criteria:
 
 ## Setup
 
+### Development
+
+1. Setup virtual environment: `virtualenv --python=3.7 .venv`
+1. Activate: `source .venv/bin/activate`
+1. Install packages: `poetry install`
+    1. Install poetry with: `curl -sSL https://install.python-poetry.org | python3 -`
+
+### Dependency
+
 Add the following to your `setup.py`:
 
 ```python
@@ -28,6 +37,13 @@ From there, import any desired classes and functions like you would for other pa
 from tap_kit import TapExecutor
 from tap_kit.streams import Stream
 ```
+
+## Publish
+
+1. Update `pyproject.toml` with any metadata changes, including a version update.
+1. `poetry build`
+1. `poetry publish -r artifactory`
+    1. Make sure that credentials are added to your env variables for: `POETRY_HTTP_BASIC_ARTIFACTORY_USERNAME` and `POETRY_HTTP_BASIC_ARTIFACTORY_PASSWORD`
 
 ## Example taps using `tap-kit`
 
