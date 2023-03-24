@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "tap-kit"
+version = "0.1.2"
+description = "tap-kit is a toolkit for simplifying the build of Singer taps, serving as a helper library for common functionality."
+authors = ["Your Name <you@example.com>"]
+license = "Apache License 2.0"
+readme = "README.md"
+packages = [{include = "tap_kit"}]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+singer-python = "5.2.0"
+requests = "2.18.4"
+pendulum = "1.2.0"
+
+[[tool.poetry.source]]
+name = "artifactory"
+url = "https://simondata.jfrog.io/artifactory/api/pypi/pypi"
+default = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
